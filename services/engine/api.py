@@ -182,9 +182,12 @@ def deadline(sid: str, req: DeadlineReq):
 @app.get("/api/session/{sid}/validation")
 def validation(sid: str):
     s = get_session(sid)
+    if s.validation:
+        return s.validation
     if len(s.payloads) < s.sc.hours:
         return {"pending": True, **s.status()}
-    return validate(s)
+    s.validation = validate(s)
+    return s.validation
 
 
 @app.get("/api/live/{slug}")

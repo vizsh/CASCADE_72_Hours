@@ -45,7 +45,27 @@ class Session:
         self.error: str | None = None
         self.opt_cache: dict[int, dict] = {}
         self.fc_lock = threading.Lock()
+        self.validation: dict | None = None
+        self._load_baked()
         threading.Thread(target=self._walk, daemon=True).start()
+
+    def _load_baked(self):
+        """Serve precomputed issuances immediately; the walker still runs to
+        rebuild ensemble snapshots for what-if questions."""
+        import gzip
+        import json
+        from pathlib import Path
+
+        d = Path(__file__).resolve().parent.parent / "data" / "baked" / self.sid
+        if not d.exists():
+            return
+        for f in d.glob("*.json.gz"):
+            with gzip.open(f, "rt", encoding="utf-8") as fh:
+                data = json.load(fh)
+            if f.name.startswith("validation"):
+                self.validation = data
+            else:
+                self.payloads[int(f.name.split(".")[0])] = data
 
     # ---------------------------------------------------------------- walking
     def _walk(self):
@@ -57,6 +77,7 @@ class Session:
                     ens = self.fc.equal_weight_copy()
                     run = self.fc.forecast(h, base=ens)
                     payload = self._payload(h, run)
+                with self.cv:
                     self.snaps[h] = self._pack(ens)
                 with self.cv:
                     self.payloads[h] = payload
@@ -75,8 +96,15 @@ class Session:
         d["_t"] = ens.t
         return d
 
+    def wait_snap(self, h: int, timeout: float = 600) -> None:
+        h = min(h, self.sc.hours - 1)
+        with self.cv:
+            self.cv.wait_for(lambda: h in self.snaps or self.error is not None, timeout=timeout)
+        if self.error:
+            raise RuntimeError(self.error)
+
     def base_ens(self, h: int) -> Ensemble:
-        self.wait(h)
+        self.wait_snap(h)
         d = self.snaps[h]
         e = Ensemble.__new__(Ensemble)
         e.st, e.P, e.truth = self.st, self.fc.P, False
@@ -116,7 +144,8 @@ class Session:
         return self.payloads[min(h, self.sc.hours - 1)]
 
     def status(self) -> dict:
-        return {"id": self.sid, "ready_hours": len(self.payloads), "hours": self.sc.hours,
+        return {"id": self.sid, "ready_hours": len(self.payloads), "whatif_ready_hours": len(self.snaps),
+                "hours": self.sc.hours,
                 "elapsed_s": round(time.time() - self.started, 1), "error": self.error}
 
     # ---------------------------------------------------------------- payload

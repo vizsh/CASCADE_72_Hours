@@ -196,6 +196,7 @@ def evaluate(session, now: int, actions: list[Action], horizon: int = 72) -> dic
         },
         "equity_share_vulnerable": round(equity, 3),
         "resources": _usage(actions),
+        "zone_delta": [round(float(v)) for v in dz],
     }
 
 
