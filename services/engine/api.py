@@ -190,6 +190,37 @@ def validation(sid: str):
     return s.validation
 
 
+class ReportReq(BaseModel):
+    zone: str
+    text: str
+    lang: str = "en"
+
+
+_reports: list[dict] = []
+
+
+@app.post("/api/report")
+def report(req: ReportReq):
+    """Score a citizen report the same way the forecaster scores clusters:
+    independent wording, plausibility for the ground it describes, and how many
+    near-identical reports arrived just before it."""
+    import math
+    import time as _t
+
+    now = _t.time()
+    recent = [r for r in _reports if now - r["at"] < 3600]
+    dup = sum(1 for r in recent if r["text"].strip().lower() == req.text.strip().lower())
+    same_zone = sum(1 for r in recent if r["zone"] == req.zone)
+    city = load_city("nagpur")
+    z = next((z for z in city.zones if z.id == req.zone), None)
+    hand = z.hand if z else 3.0
+    words = len(req.text.split())
+    score = 0.4 + 0.25 * min(1.0, words / 8) - 0.9 * min(1.0, dup / 3) - 0.35 * max(0.0, (hand - 5) / 6) + 0.15 * min(1.0, same_zone / 4)
+    cred = 1 / (1 + math.exp(-4 * (score - 0.4)))
+    _reports.append({"zone": req.zone, "text": req.text, "lang": req.lang, "at": now, "credibility": cred})
+    return {"accepted": True, "credibility": round(cred, 3), "duplicates_last_hour": dup}
+
+
 @app.get("/api/live/{slug}")
 def live(slug: str):
     try:

@@ -161,7 +161,8 @@ class Session:
             col = e["_col"]
             e["p24"] = round(float(((col >= h) & (col < h + 24)).mean()), 3)
             e["p6"] = round(float(((col >= h) & (col < h + 6)).mean()), 3)
-        ev_out = [{k: v for k, v in e.items() if not k.startswith("_")} | {"_i": e["_i"]} for e in ev[:80]]
+        top = ev[:80] + [e for e in ev[80:] if e["id"] in set(course)]
+        ev_out = [{k: v for k, v in e.items() if not k.startswith("_")} | {"_i": e["_i"]} for e in top]
         keep = {e["id"] for e in ev_out}
         ln = [l for l in ln if l["from"] in keep and l["to"] in keep]
         post = fc.pick_posterior()

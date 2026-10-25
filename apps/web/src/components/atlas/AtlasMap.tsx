@@ -2,7 +2,7 @@
 
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { H3HexagonLayer } from "@deck.gl/geo-layers";
-import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { IconLayer, PathLayer, PolygonLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef } from "react";
@@ -104,7 +104,7 @@ function hexColor(metric: MapMetric, payload: Payload | undefined, idx: number):
     return p < 0.05 ? [0, 0, 0, 0] : [...STATE_RGB[2], Math.round(30 + 190 * p)] as [number, number, number, number];
   }
   const s = payload.zones.state[idx];
-  return s === 0 ? [0, 0, 0, 0] : [...STATE_RGB[s], [0, 80, 135, 190][s]] as [number, number, number, number];
+  return s === 0 ? [0, 0, 0, 0] : [...STATE_RGB[s], [0, 62, 120, 175][s]] as [number, number, number, number];
 }
 
 export function courseEvents(payload?: Payload): CascadeEvent[] {
@@ -169,6 +169,10 @@ export function AtlasMap({
   }, [city, initialZoom, interactive]);
 
   const hexData = useMemo(() => city.zones.filter((z) => !z.lake), [city]);
+  // linework drawn above the risk fill so the atlas stays legible under heavy risk
+  const topRoads = useMemo(() => city.layers.roads.filter((r) => r.c !== "tertiary"), [city]);
+  const topRivers = useMemo(() => city.layers.rivers.filter((r) => r.m), [city]);
+  const topLakes = useMemo(() => city.layers.lakes.filter((l) => l.g.length > 3), [city]);
   const assetData = useMemo(() => city.assets.filter((a) => assetKinds.includes(a.kind)), [city, assetKinds]);
   const atRisk = useMemo(() => {
     const m = new Map<string, number>();
@@ -204,6 +208,34 @@ export function AtlasMap({
         transitions: { getFillColor: 260 },
         onHover: (i) => setHover(i.object ? (i.object as { id: string }).id : null),
         onClick: (i) => i.object && select({ type: "zone", id: (i.object as { id: string }).id }),
+      }),
+      new PolygonLayer({
+        id: "lakes-top",
+        data: topLakes,
+        getPolygon: (d) => d.g,
+        getFillColor: [211, 228, 240, 255],
+        getLineColor: [44, 120, 181, 255],
+        getLineWidth: 1,
+        lineWidthUnits: "pixels",
+        stroked: true,
+      }),
+      new PathLayer({
+        id: "rivers-top",
+        data: topRivers,
+        getPath: (d) => d.g,
+        getColor: [44, 120, 181, 230],
+        getWidth: 2,
+        widthUnits: "pixels",
+      }),
+      new PathLayer({
+        id: "roads-top",
+        data: topRoads,
+        getPath: (d) => d.g,
+        getColor: (d) => (d.c === "secondary" ? [44, 47, 51, 120] : [44, 47, 51, 200]),
+        getWidth: (d) => ROAD_WIDTH[d.c] ?? 1,
+        widthUnits: "pixels",
+        capRounded: true,
+        jointRounded: true,
       }),
     ];
     if (showAssets) {
@@ -294,7 +326,7 @@ export function AtlasMap({
       );
     }
     ov.setProps({ layers: layers as never[] });
-  }, [hexData, assetData, payload, metric, showCourse, showAssets, course, selection, hover, atRisk, interactive, select, setHover, hi, highlight, zoneColor, zoneKey]);
+  }, [topRoads, topRivers, topLakes, hexData, assetData, payload, metric, showCourse, showAssets, course, selection, hover, atRisk, interactive, select, setHover, hi, highlight, zoneColor, zoneKey]);
 
   // fly to a selection
   useEffect(() => {

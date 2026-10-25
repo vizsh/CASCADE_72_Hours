@@ -30,7 +30,7 @@ export function CommandView() {
   if (error) return <EngineDown error={error} />;
   if (!city || !payload || !scenario)
     return (
-      <div className="grid h-full grid-cols-[1fr_400px]">
+      <div className="grid h-full grid-cols-[1fr_340px] 2xl:grid-cols-[1fr_400px]">
         <Skeleton className="h-full rounded-none" />
         <div className="space-y-3 border-l border-rule p-4">
           {Array.from({ length: 7 }, (_, i) => (
@@ -49,7 +49,7 @@ export function CommandView() {
   const metrics = METRICS.filter((m) => m.id !== "truth" || payload.truth);
 
   return (
-    <div className="grid h-full grid-cols-[1fr_400px]">
+    <div className="grid h-full grid-cols-[1fr_340px] 2xl:grid-cols-[1fr_400px]">
       <section className="relative min-w-0">
         <MapClient city={city} payload={payload} metric={metric} />
         <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-3">

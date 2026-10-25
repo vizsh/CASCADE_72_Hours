@@ -37,7 +37,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const rPeak = payload ? Math.max(...payload.cascade_r) : 0;
 
   return (
-    <div className="grid h-dvh grid-cols-[208px_1fr] grid-rows-[52px_1fr_auto] overflow-hidden bg-paper">
+    <div className="grid h-dvh grid-cols-[56px_1fr] grid-rows-[52px_1fr_auto] overflow-hidden bg-paper xl:grid-cols-[208px_1fr]">
       <header className="col-span-2 flex items-center gap-4 border-b border-rule bg-paper-raised px-4">
         <Link href="/" className="flex items-center gap-2 pr-2" aria-label="CASCADE 72 home">
           <Mark />
@@ -80,10 +80,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <nav className="row-span-1 flex flex-col gap-5 overflow-y-auto border-r border-rule bg-paper-raised px-3 py-4" aria-label="Operator views">
+      <nav className="row-span-1 flex flex-col gap-5 overflow-y-auto border-r border-rule bg-paper-raised px-2 py-4 xl:px-3" aria-label="Operator views">
         {NAV.map((g) => (
           <div key={g.group}>
-            <div className="mb-1.5 px-2 text-[10.5px] font-bold uppercase tracking-[0.08em] text-ink-3">{g.group}</div>
+            <div className="mb-1.5 hidden px-2 text-[10.5px] font-bold uppercase tracking-[0.08em] text-ink-3 xl:block">{g.group}</div>
             <ul className="space-y-0.5">
               {g.items.map((it) => {
                 const href = `${base}${it.href}`;
@@ -93,13 +93,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <li key={it.href}>
                     <Link
                       href={href}
+                      title={it.label}
                       className={cn(
                         "flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13.5px] font-medium text-ink-2 transition-colors hover:bg-paper-sunk",
                         active && "bg-ink text-paper-raised hover:bg-ink",
                       )}
                     >
-                      <Icon size={15} strokeWidth={2} />
-                      {it.label}
+                      <Icon size={15} strokeWidth={2} className="shrink-0" />
+                      <span className="hidden xl:inline">{it.label}</span>
                     </Link>
                   </li>
                 );
@@ -109,13 +110,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ))}
         <div className="mt-auto space-y-0.5 border-t border-rule pt-3">
           <Link href="/live" className="flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13.5px] font-medium text-ink-2 hover:bg-paper-sunk">
-            <Activity size={15} /> Live: today
+            <Activity size={15} className="shrink-0" /> <span className="hidden xl:inline">Live: today</span>
           </Link>
           <Link href="/my-area" className="flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13.5px] font-medium text-ink-2 hover:bg-paper-sunk">
-            <Smartphone size={15} /> Citizen view
+            <Smartphone size={15} className="shrink-0" /> <span className="hidden xl:inline">Citizen view</span>
           </Link>
           {scenario ? (
-            <p className="px-2 pt-2 text-[11px] leading-snug text-ink-3">
+            <p className="hidden px-2 pt-2 text-[11px] leading-snug text-ink-3 xl:block">
               {scenario.provenance.telemetry ?? scenario.provenance.all ?? ""}
             </p>
           ) : null}
