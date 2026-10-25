@@ -1,0 +1,8 @@
+numpy
+scipy
+fastapi
+uvicorn[standard]
+networkx
+pydantic
+httpx
+h3

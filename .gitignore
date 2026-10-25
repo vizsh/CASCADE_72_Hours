@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# builds
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# local env and editor
+.env
+.env.local
+.env*.local
+.DS_Store
+.vscode/
+.idea/
+
+# impeccable working files
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/
+.impeccable/config.local.json
+
+# engine scratch
+services/engine/data/cities/*/cache/
+*.log
