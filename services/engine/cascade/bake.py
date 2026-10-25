@@ -34,7 +34,7 @@ def _default(o):
 
 def bake(sid: str) -> None:
     t0 = time.time()
-    s = Session(sid)
+    s = Session(sid, use_baked=False)
     s.wait_snap(s.sc.hours - 1, timeout=3600)
     out = BAKED / sid
     out.mkdir(parents=True, exist_ok=True)

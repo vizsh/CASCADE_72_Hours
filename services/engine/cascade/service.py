@@ -29,7 +29,7 @@ def _arr(a, n=2):
 
 
 class Session:
-    def __init__(self, sid: str, P: int = 128):
+    def __init__(self, sid: str, P: int = 128, use_baked: bool = True):
         self.sid = sid
         self.sc = scenarios.get(sid)
         self.city = load_city(self.sc.city)
@@ -46,7 +46,8 @@ class Session:
         self.opt_cache: dict[int, dict] = {}
         self.fc_lock = threading.Lock()
         self.validation: dict | None = None
-        self._load_baked()
+        if use_baked:
+            self._load_baked()
         threading.Thread(target=self._walk, daemon=True).start()
 
     def _load_baked(self):
@@ -72,17 +73,20 @@ class Session:
         try:
             order = list(range(self.sc.hours))
             for h in order:
+                baked = h in self.payloads
                 with self.fc_lock:
                     self.fc.assimilate_to(h)
                     ens = self.fc.equal_weight_copy()
-                    run = self.fc.forecast(h, base=ens)
-                    payload = self._payload(h, run)
+                    # a baked issuance only needs its ensemble snapshot for what-ifs
+                    run = None if baked else self.fc.forecast(h, base=ens)
+                    payload = None if baked else self._payload(h, run)
                 with self.cv:
                     self.snaps[h] = self._pack(ens)
-                with self.cv:
-                    self.payloads[h] = payload
-                    self._remember(("base", h, 72), run)
+                    if payload is not None:
+                        self.payloads[h] = payload
+                        self._remember(("base", h, 72), run)
                     self.cv.notify_all()
+                time.sleep(0.02)  # yield the interpreter to API requests
         except Exception as err:  # surface engine failures to the API
             import traceback
             self.error = traceback.format_exc()

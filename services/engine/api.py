@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import subprocess
 import sys
+
+sys.setswitchinterval(0.002)  # keep requests responsive while the walker thread runs
 import threading
 from pathlib import Path
 

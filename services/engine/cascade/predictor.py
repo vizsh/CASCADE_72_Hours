@@ -678,7 +678,8 @@ class ForecastRun:
         for kind, arr in self.ens.first.items():
             a = arr[np.isfinite(arr)]
             rel = (a - now + 3).astype(int)
-            rel = rel[(rel >= 0) & (rel < H + 6)]
+            # conditions first seen at the issue hour were already present, not propagated
+            rel = rel[(rel >= 0) & (rel < H + 6) & (rel != 3)]
             np.add.at(all_c, rel, 1)
             if kind not in direct:
                 np.add.at(sec_c, rel, 1)
@@ -700,7 +701,7 @@ class ForecastRun:
         share_watch = st.pop[zs["state"] >= WATCH].sum() / pop
         if share_crit >= 0.03 or (r_now >= 1.0 and share_high >= 0.05):
             return CRITICAL
-        if share_high >= 0.04 or r_now >= 1.0:
+        if share_high >= 0.04 or (r_now >= 1.0 and share_watch >= 0.03):
             return HIGH
         if share_watch >= 0.03:
             return WATCH
